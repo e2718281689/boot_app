@@ -116,7 +116,12 @@ static bool flash_main_app_from_sd(void)
         return false;
     }
 
-    ESP_LOGI(TAG, "Found new firmware on TF card. Starting update process...");
+    // Get file size to prevent overflow
+    fseek(f, 0, SEEK_END);
+    long file_size = ftell(f);
+    fseek(f, 0, SEEK_SET);
+
+    ESP_LOGI(TAG, "Found new firmware on TF card. Starting update process... File size: %ld bytes", file_size);
 
     // 修正 #2: 使用 ESP_PARTITION_SUBTYPE_ANY 来查找分区，主要依赖分区名 "app0"
     const esp_partition_t *update_partition = esp_partition_find_first(
@@ -130,8 +135,15 @@ static bool flash_main_app_from_sd(void)
 
     ESP_LOGI(TAG, "Target partition: %s, size: %lu bytes", update_partition->label, (unsigned long)update_partition->size);
 
+    // Check if firmware fits into the partition
+    if (file_size > update_partition->size) {
+        ESP_LOGE(TAG, "Firmware file is too large for the partition! File: %ld bytes, Partition: %lu bytes", file_size, (unsigned long)update_partition->size);
+        fclose(f);
+        return false;
+    }
+
     esp_ota_handle_t ota_handle = 0;
-    esp_err_t err = esp_ota_begin(update_partition, OTA_SIZE_UNKNOWN, &ota_handle);
+    esp_err_t err = esp_ota_begin(update_partition, file_size, &ota_handle);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "esp_ota_begin failed: %s", esp_err_to_name(err));
         fclose(f);
