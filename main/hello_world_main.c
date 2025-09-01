@@ -12,7 +12,7 @@
 static const char *TAG = "SAFE_BOOT";
 
 // --- TF卡上的固件文件名 ---
-#define OTA_FIRMWARE_PATH "/sdcard/spi_lcd_st7789.bin"
+#define OTA_FIRMWARE_PATH "/sdcard/idol_c3.bin"
 
 // --- 刷写缓冲区大小 ---
 #define OTA_BUFFER_SIZE 4096
